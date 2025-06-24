@@ -12,6 +12,7 @@ import MidiMonitor from './components/MidiMonitor';
 import confetti from 'canvas-confetti';
 import ConfettiContext from './context/ConfettiContext';
 import type { ConfettiTrigger } from './context/ConfettiContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const SLOT_LAYOUT = [
   [{ name: 'Kick', color: '#FF4136' }],
@@ -230,6 +231,7 @@ function App() {
         {/* SettingsDialog and MidiMonitor only when settingsOpen */}
         <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} midiInputs={midiInputs} selectedInputId={selectedInputId} setSelectedInputId={setSelectedInputId} partyMode={partyMode} setPartyMode={setPartyMode} />
         {(settingsOpen || anySlotSettingsOpen) && <MidiMonitor events={midiEvents} />}
+        <Analytics />
       </Box>
     </ConfettiContext.Provider>
   );
