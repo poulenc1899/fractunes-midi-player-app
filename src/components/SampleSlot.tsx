@@ -5,11 +5,12 @@ export type MidiSetting = {
   channel: number | 'all';
 };
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Card, CardContent, Typography, IconButton, Drawer, Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import clsx from 'clsx';
 import { defaultMidiSettings } from '../config/defaultMidiSettings';
+import ConfettiContext from '../context/ConfettiContext';
 
 interface SampleSlotProps {
   name: string;
@@ -54,6 +55,8 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
   const playDurationRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const triggerConfetti = useContext(ConfettiContext);
+  const slotRef = useRef<HTMLDivElement | null>(null);
 
   // Save settings to localStorage
   useEffect(() => {
@@ -195,6 +198,15 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
       setIsPlaying(false);
       setPlayhead(0);
     };
+    // Calculate center of slot for confetti
+    if (slotRef.current) {
+      const rect = slotRef.current.getBoundingClientRect();
+      const x = (rect.left + rect.right) / 2 / window.innerWidth;
+      const y = (rect.top + rect.bottom) / 2 / window.innerHeight;
+      triggerConfetti(color, { x, y });
+    } else {
+      triggerConfetti(color);
+    }
   };
 
   // Fix: use 'any' for event type to avoid MUI SelectChangeEvent import error
@@ -205,6 +217,7 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
 
   return (
     <Card
+      ref={slotRef}
       className={clsx({ 'sample-slot-playing': isPlaying })}
       sx={{
         width: 180,

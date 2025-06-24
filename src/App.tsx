@@ -140,7 +140,7 @@ function App() {
   }, []);
 
   // Helper to trigger confetti
-  const triggerConfetti: ConfettiTrigger = (color, origin) => {
+  const triggerConfetti: ConfettiTrigger = (color: string, origin?: { x: number, y: number }) => {
     if (!partyMode) return;
     confetti({
       particleCount: 250,
