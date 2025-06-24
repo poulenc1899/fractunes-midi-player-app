@@ -9,6 +9,10 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsDialog from './components/SettingsDialog';
 import MidiMonitor from './components/MidiMonitor';
+import confetti from 'canvas-confetti';
+import React from 'react';
+import ConfettiContext from './context/ConfettiContext';
+import type { ConfettiTrigger } from './context/ConfettiContext';
 
 const SLOT_LAYOUT = [
   [{ name: 'Kick', color: '#FF4136' }],
@@ -37,6 +41,8 @@ function App() {
   const [midiInputs, setMidiInputs] = useState<any[]>([]);
   const [selectedInputId, setSelectedInputId] = useState<string | null>(null);
   const [midiEvents, setMidiEvents] = useState<any[]>([]); // {note, velocity, channel, timestamp}
+  const [partyMode, setPartyMode] = useState(false);
+  const confettiRef = useRef<HTMLCanvasElement | null>(null);
 
   // Keep registryRef in sync
   useEffect(() => {
@@ -134,95 +140,103 @@ function App() {
     };
   }, []);
 
-  // Detect orientation
-  const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
-  useEffect(() => {
-    const onResize = () => setIsLandscape(window.innerWidth > window.innerHeight);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  // Helper to trigger confetti
+  const triggerConfetti: ConfettiTrigger = (color, origin) => {
+    if (!partyMode) return;
+    confetti({
+      particleCount: 250,
+      spread: 300,
+      origin: origin || { y: 0.6 },
+      colors: [color],
+      zIndex: 1,
+      disableForReducedMotion: true,
+      force: 0.5,
+      width: 1600,
+      duration: 1000,
+    });
+  };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f0f4f8', position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      {/* Show a message if not in landscape */}
-      {!isLandscape && (
-        <Box sx={{ position: 'fixed', inset: 0, bgcolor: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="h4" sx={{ color: '#fff', textAlign: 'center', p: 4 }}>
-            Please rotate your iPad to landscape mode for the best experience.
-          </Typography>
+    <ConfettiContext.Provider value={triggerConfetti}>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f0f4f8', position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflow: 'hidden', zIndex: 0 }}>
+        {/* Top bar only if not fullscreen */}
+        {!fullscreen && (
+          <AppBar position="static" color="default" elevation={2} sx={{ mb: 0, width: '100vw', left: 0, top: 0, boxShadow: 2 }}>
+            <Toolbar sx={{ justifyContent: 'space-between', minHeight: 64, px: 2 }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 900,
+                  fontSize: 24,
+                  letterSpacing: 2,
+                  color: '#0074D9',
+                  fontFamily: 'Montserrat, Arial, sans-serif',
+                  textTransform: 'uppercase',
+                }}
+              >
+                FracTunes
+              </Typography>
+              <Box sx={{ zIndex: 2600 }}>
+                <IconButton color="primary" onClick={() => setSettingsOpen(true)}>
+                  <SettingsIcon />
+                </IconButton>
+              </Box>
+            </Toolbar>
+          </AppBar>
+        )}
+        {/* ModeSelector always visible, fixed at top center */}
+        <Box sx={{ position: 'fixed', top: 12, left: 0, width: '100vw', display: 'flex', justifyContent: 'center', zIndex: 2500 }}>
+          <ModeSelector mode={mode} setMode={setMode} />
         </Box>
-      )}
-      {/* Top bar only if not fullscreen */}
-      {!fullscreen && (
-        <AppBar position="static" color="default" elevation={2} sx={{ mb: 0, width: '100vw', left: 0, top: 0, boxShadow: 2 }}>
-          <Toolbar sx={{ justifyContent: 'space-between', minHeight: 64, px: 2 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 900,
-                fontSize: 24,
-                letterSpacing: 2,
-                color: '#0074D9',
-                fontFamily: 'Montserrat, Arial, sans-serif',
-                textTransform: 'uppercase',
-              }}
-            >
-              FracTunes
-            </Typography>
-            <Box sx={{ zIndex: 2600 }}>
-              <IconButton color="primary" onClick={() => setSettingsOpen(true)}>
-                <SettingsIcon />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
-      )}
-      {/* ModeSelector always visible, fixed at top center */}
-      <Box sx={{ position: 'fixed', top: 12, left: 0, width: '100vw', display: 'flex', justifyContent: 'center', zIndex: 2500 }}>
-        <ModeSelector mode={mode} setMode={setMode} />
-      </Box>
-      <Box sx={{ width: '100vw', height: fullscreen ? '100vh' : 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pt: fullscreen ? 0 : 2, pb: 0, px: 0, boxSizing: 'border-box' }}>
-        <Box className="slots-container" sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center', px: 0 }}>
-          {SLOT_LAYOUT.map((row, rowIdx) => (
-            <Box className={`slot-row row-${rowIdx}`} key={rowIdx} sx={{ display: 'flex', justifyContent: 'center', gap: 4, width: '100%' }}>
-              {row.map((slot) => (
-                <SampleSlot
-                  key={slot.name}
-                  name={slot.name}
-                  color={slot.color}
-                  mode={mode}
-                  onRegister={handleRegister}
-                  fullscreen={fullscreen}
-                  onSettingsOpen={() => setAnySlotSettingsOpen(true)}
-                  onSettingsClose={() => setAnySlotSettingsOpen(false)}
-                />
-              ))}
-            </Box>
-          ))}
+        {/* Responsive slots layout */}
+        <Box sx={{ width: '100vw', height: fullscreen ? '100vh' : 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pt: fullscreen ? 0 : 2, pb: 0, px: 0, boxSizing: 'border-box' }}>
+          <Box className="slots-container" sx={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: 'wrap',
+            gap: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: 2,
+          }}>
+            {SLOT_LAYOUT.flat().map((slot, idx) => (
+              <SampleSlot
+                key={slot.name}
+                name={slot.name}
+                color={slot.color}
+                mode={mode}
+                onRegister={handleRegister}
+                fullscreen={fullscreen}
+                onSettingsOpen={() => setAnySlotSettingsOpen(true)}
+                onSettingsClose={() => setAnySlotSettingsOpen(false)}
+              />
+            ))}
+          </Box>
         </Box>
-      </Box>
-      {/* Fullscreen toggle button */}
-      <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000, display: fullscreen ? 'none' : 'flex' }}>
-        <Tooltip title="Full Screen">
-          <Fab color="primary" size="large" onClick={handleFullscreenToggle}>
-            <FullscreenIcon fontSize="large" />
-          </Fab>
-        </Tooltip>
-      </Box>
-      {/* Exit fullscreen button */}
-      {fullscreen && (
-        <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000 }}>
-          <Tooltip title="Exit Full Screen">
+        {/* Fullscreen toggle button */}
+        <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000, display: fullscreen ? 'none' : 'flex' }}>
+          <Tooltip title="Full Screen">
             <Fab color="primary" size="large" onClick={handleFullscreenToggle}>
-              <FullscreenExitIcon fontSize="large" />
+              <FullscreenIcon fontSize="large" />
             </Fab>
           </Tooltip>
         </Box>
-      )}
-      {/* SettingsDialog and MidiMonitor only when settingsOpen */}
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} midiInputs={midiInputs} selectedInputId={selectedInputId} setSelectedInputId={setSelectedInputId} />
-      {(settingsOpen || anySlotSettingsOpen) && <MidiMonitor events={midiEvents} />}
-    </Box>
+        {/* Exit fullscreen button */}
+        {fullscreen && (
+          <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 3000 }}>
+            <Tooltip title="Exit Full Screen">
+              <Fab color="primary" size="large" onClick={handleFullscreenToggle}>
+                <FullscreenExitIcon fontSize="large" />
+              </Fab>
+            </Tooltip>
+          </Box>
+        )}
+        {/* SettingsDialog and MidiMonitor only when settingsOpen */}
+        <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} midiInputs={midiInputs} selectedInputId={selectedInputId} setSelectedInputId={setSelectedInputId} partyMode={partyMode} setPartyMode={setPartyMode} />
+        {(settingsOpen || anySlotSettingsOpen) && <MidiMonitor events={midiEvents} />}
+      </Box>
+    </ConfettiContext.Provider>
   );
 }
 
