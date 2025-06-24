@@ -33,6 +33,7 @@ function App() {
   const [fullscreen, setFullscreen] = useState(false);
   const registryRef = useRef(slotRegistry);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [anySlotSettingsOpen, setAnySlotSettingsOpen] = useState(false);
   const [midiInputs, setMidiInputs] = useState<any[]>([]);
   const [selectedInputId, setSelectedInputId] = useState<string | null>(null);
   const [midiEvents, setMidiEvents] = useState<any[]>([]); // {note, velocity, channel, timestamp}
@@ -194,6 +195,8 @@ function App() {
                   mode={mode}
                   onRegister={handleRegister}
                   fullscreen={fullscreen}
+                  onSettingsOpen={() => setAnySlotSettingsOpen(true)}
+                  onSettingsClose={() => setAnySlotSettingsOpen(false)}
                 />
               ))}
             </Box>
@@ -220,7 +223,7 @@ function App() {
       )}
       {/* SettingsDialog and MidiMonitor only when settingsOpen */}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} midiInputs={midiInputs} selectedInputId={selectedInputId} setSelectedInputId={setSelectedInputId} />
-      {settingsOpen && <MidiMonitor events={midiEvents} />}
+      {(settingsOpen || anySlotSettingsOpen) && <MidiMonitor events={midiEvents} />}
     </Box>
   );
 }

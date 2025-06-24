@@ -16,6 +16,8 @@ interface SampleSlotProps {
   mode: 'default' | 'europapa';
   onRegister?: (slotName: string, midiSetting: MidiSetting, play: () => void) => void;
   fullscreen?: boolean;
+  onSettingsOpen?: () => void;
+  onSettingsClose?: () => void;
 }
 
 const midiNumbers = Array.from({ length: 128 }, (_, i) => i);
@@ -33,7 +35,7 @@ const getSampleUrl = (mode: string, name: string) => {
 const WAVEFORM_WIDTH = 140;
 const WAVEFORM_HEIGHT = 40;
 
-const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, fullscreen }) => {
+const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, fullscreen, onSettingsOpen, onSettingsClose }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [midiSetting, setMidiSetting] = useState<MidiSetting>({ note: 'all', velocity: 'all', channel: 'all' });
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -226,7 +228,7 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
       {!fullscreen && (
         <IconButton
           aria-label="settings"
-          onClick={e => { e.stopPropagation(); setSettingsOpen(true); }}
+          onClick={e => { e.stopPropagation(); setSettingsOpen(true); onSettingsOpen && onSettingsOpen(); }}
           sx={{ position: 'absolute', top: 8, right: 8, color: '#fff', background: 'rgba(0,0,0,0.18)' }}
           size="large"
         >
@@ -255,7 +257,7 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
         <Drawer
           anchor="right"
           open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
+          onClose={() => { setSettingsOpen(false); onSettingsClose && onSettingsClose(); }}
           PaperProps={{ sx: { width: 300, p: 2 } }}
         >
           <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
