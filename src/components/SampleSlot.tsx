@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, Typography, IconButton, Drawer, Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import clsx from 'clsx';
+import { defaultMidiSettings } from '../config/defaultMidiSettings';
 
 interface SampleSlotProps {
   name: string;
@@ -37,7 +38,14 @@ const WAVEFORM_HEIGHT = 40;
 
 const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, fullscreen, onSettingsOpen, onSettingsClose }) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [midiSetting, setMidiSetting] = useState<MidiSetting>({ note: 'all', velocity: 'all', channel: 'all' });
+  const [midiSetting, setMidiSetting] = useState<MidiSetting>(() => {
+    const key = getStorageKey(name, mode);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return defaultMidiSettings[mode][name];
+  });
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playhead, setPlayhead] = useState(0); // 0 to 1
@@ -46,15 +54,6 @@ const SampleSlot: React.FC<SampleSlotProps> = ({ name, color, mode, onRegister, 
   const playDurationRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Load settings from localStorage
-  useEffect(() => {
-    const key = getStorageKey(name, mode);
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      setMidiSetting(JSON.parse(saved));
-    }
-  }, [name, mode]);
 
   // Save settings to localStorage
   useEffect(() => {
