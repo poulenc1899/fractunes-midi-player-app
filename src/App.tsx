@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './App.css';
 import ModeSelector from './components/ModeSelector';
 import SampleSlot from './components/SampleSlot';
@@ -57,14 +57,12 @@ function App() {
       console.error('Web MIDI API not supported in this browser.');
       return;
     }
-    let midiAccess: any = null;
     let listeners: Array<() => void> = [];
     let inputList: any[] = [];
     console.log('Requesting MIDI access...');
     navigator.requestMIDIAccess().then(
       (access) => {
         console.log('MIDI access granted!');
-        midiAccess = access;
         inputList = Array.from(access.inputs.values());
         setMidiInputs(inputList);
         console.log('Detected MIDI inputs:', inputList);
