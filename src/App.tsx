@@ -10,7 +10,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsDialog from './components/SettingsDialog';
 import MidiMonitor from './components/MidiMonitor';
 import confetti from 'canvas-confetti';
-import React from 'react';
 import ConfettiContext from './context/ConfettiContext';
 import type { ConfettiTrigger } from './context/ConfettiContext';
 
@@ -42,7 +41,6 @@ function App() {
   const [selectedInputId, setSelectedInputId] = useState<string | null>(null);
   const [midiEvents, setMidiEvents] = useState<any[]>([]); // {note, velocity, channel, timestamp}
   const [partyMode, setPartyMode] = useState(false);
-  const confettiRef = useRef<HTMLCanvasElement | null>(null);
 
   // Keep registryRef in sync
   useEffect(() => {
@@ -150,9 +148,6 @@ function App() {
       colors: [color],
       zIndex: 1,
       disableForReducedMotion: true,
-      force: 0.5,
-      width: 1600,
-      duration: 1000,
     });
   };
 
@@ -200,7 +195,7 @@ function App() {
             justifyContent: 'center',
             px: 2,
           }}>
-            {SLOT_LAYOUT.flat().map((slot, idx) => (
+            {SLOT_LAYOUT.flat().map((slot) => (
               <SampleSlot
                 key={slot.name}
                 name={slot.name}
